@@ -1,0 +1,31 @@
+---
+- hosts: localhost
+  name: NetApp licensing
+  vars:
+   login: &login
+   hostname: 192.168.1.50
+    username: ansible
+    password: Password123
+    https: true
+    validate_certs: false
+    clustername: CLUSTER96
+  tasks:
+  - name: Install Licenses
+    na_ontap_cluster:
+      state: present
+      cluster_name: "{{ clustername }}"
+      license_code: "{{ item }}"
+      <<: *login
+   loop:
+     - CAYHXPKBFDUFZGABGAAAAAAAAAAA
+     - APTLYPKBFDUFZGABGAAAAAAAAAAA
+     - WSKTAQKBFDUFZGABGAAAAAAAAAAA
+     - CGVTEQKBFDUFZGABGAAAAAAAAAAA
+     - OUVWXPKBFDUFZGABGAAAAAAAAAAA
+     - QFATWPKBFDUFZGABGAAAAAAAAAAA
+     - UHGXBQKBFDUFZGABGAAAAAAAAAAA
+     - GCEMCQKBFDUFZGABGAAAAAAAAAAA
+     - KYMEAQKBFDUFZGABGAAAAAAAAAAA
+     - SWBBDQKBFDUFZGABGAAAAAAAAAAA
+     - YDPPZPKBFDUFZGABGAAAAAAAAAAA
+     - INIIBQKBFDUFZGABGAAAAAAAAAAA
