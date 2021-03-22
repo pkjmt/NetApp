@@ -20,7 +20,7 @@
         na_ontap_interface:
           interface_name: "{{ vservername }}_lif1"
           home_port: "{{ home_port }}"
-          home_node: "useclnsnp101-01"
+          home_node: "xxxxxxxxxx"
           role: data
           protocols: nfs,cifs
           admin_status: up
