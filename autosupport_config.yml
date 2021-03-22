@@ -23,7 +23,7 @@
           password: "{{ netapp_password }}"
           node_name: "{{ item }}"
           transport: "{{ netapp_transport }}"
-          from_address: "{{ item }}@nbcuni.com"
+          from_address: "{{ item }}"
           proxy_url: "{{ netapp_proxy }}"
           https: true
           validate_certs: false
