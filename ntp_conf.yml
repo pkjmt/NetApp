@@ -1,0 +1,20 @@
+---
+- hosts: ustest
+  collections:
+    - netapp.ontap
+  tasks:
+  - name: Load password from encrypted file
+    include_vars:
+      file: host_vars/admin_pass
+    no_log: true
+
+  - name: set NTP server
+    na_ontap_ntp:
+      state: present
+      version: auto
+      server_name: "{{ ntp_ip }}"
+      hostname: "{{ cluster }}"
+      username: "{{ user }}"
+      password: "{{ test_pass }}"
+      https: yes
+      validate_certs: no

@@ -1,0 +1,55 @@
+---
+  - hosts: localhost
+    collections: 
+    - netapp.ontap
+    gather_facts: false
+    tasks:
+    - name: Join cluster
+      na_ontap_cluster:
+        state: present
+        cluster_name: "{{ netapp_hostname }}"
+        username: "{{ netapp_username }}"
+        password: "{{ netapp_password }}" 
+        https: true
+        validate_certs: false
+    - name: Create cluster
+      na_ontap_cluster:
+        state: present
+        cluster_contact: "{{ netapp_contact }}"
+        cluster_location: "{{ netapp_location }}"
+        cluster_name: "{{ netapp_hostname }}"
+        username: "{{ netapp_username }}"
+        password: "{{ netapp_password }}"
+        https: true
+        validate_certs: false
+    - name: rename node
+      na_ontap_node:
+        hostname: "{{ netapp_hostname }}"
+        username: "{{ netapp_username }}"
+        password: "{{ netapp_password }}"
+        from_name: "{{ netapp_oldnodename }}"
+        name: "{{ netapp_newnodename }}"
+        https: true
+        validate_certs: false
+    - name: Install Licenses
+      na_ontap_license:
+        cluster_name: "{{ netapp_hostname }}"
+        username: "{{ netapp_username }}"
+        password: "{{ netapp_password }}"          
+        state: present
+        license_code: "{{ item }}"
+        https: true
+        validate_certs: false
+      loop:
+        - CAYHXPKBFDUFZGABGAAAAAAAAAAA
+        - APTLYPKBFDUFZGABGAAAAAAAAAAA
+        - WSKTAQKBFDUFZGABGAAAAAAAAAAA
+        - CGVTEQKBFDUFZGABGAAAAAAAAAAA
+        - OUVWXPKBFDUFZGABGAAAAAAAAAAA
+        - QFATWPKBFDUFZGABGAAAAAAAAAAA
+        - UHGXBQKBFDUFZGABGAAAAAAAAAAA
+        - GCEMCQKBFDUFZGABGAAAAAAAAAAA
+        - KYMEAQKBFDUFZGABGAAAAAAAAAAA
+        - SWBBDQKBFDUFZGABGAAAAAAAAAAA
+        - YDPPZPKBFDUFZGABGAAAAAAAAAAA
+        - INIIBQKBFDUFZGABGAAAAAAAAAAA

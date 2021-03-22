@@ -1,0 +1,16 @@
+---
+  - hosts: localhost
+    collections: 
+    - netapp.ontap
+    gather_facts: false
+    tasks:
+    - name: Rename Aggregates
+      na_ontap_aggregate:
+        service_state: online
+        from_name: "{{ old_aggrname }}"
+        name: "{{ new_aggrname }}"
+        hostname: "{{ netapp_hostname }}"
+        username: "{{ netapp_username }}"
+        password: "{{ netapp_password }}"
+        validate_certs: false
+        https: true

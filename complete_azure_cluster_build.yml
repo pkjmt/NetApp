@@ -1,0 +1,402 @@
+---
+# author: Graeme Anderson 
+# Complete NetApp cluster build to NBCU standards of an Azure CVO instance
+# Assumes that a one or two node CVO system has been deployed via NetApp Cloud Central, but no further configuration has taken place.
+# This Ansible script should be runaimmediately afetr a Terraform job creates the new CVO instance (control with Jenkins?)
+# Assumes initial config includes:
+# node naming
+# Networking setup
+# Disk setup
+# creation of default SVM
+
+# LIST REQUIRED INPUT VARIABLES HERE
+# TO BE SUPPLIED IN PLAYBOOK CALL (potentially different for each array)
+# netapp_hostname
+# netapp_username
+# netapp_password
+# license_codes - YAML list of license codes to be applied to cluster
+# dns1,dns2,dns3 - DNS server hostnames (all 3 required)
+# VARS TO BE HELD IN VARS FILES/AWX (constant across all arrays)
+# ntp_servers - YAML list of NTP servers
+# snmp_communities - YAML list of SNMP communities
+# snmp_trap_hosts - YAML list of SNMP trap hosts
+# policy_times - list of times at which schedules/snapmirror/dedupe jobs should run
+# netapp_proxy - standard proxy server hostname
+# mail_host - standard mail relay hostname
+# RBAC - standardised list of RBAC permissions to be assigned
+# snapmirror_policies - YAML dictionary of default snapmirror policy settings
+
+  - hosts: localhost
+    collections:
+      - netapp.ontap
+    gather_facts: false
+    tasks:
+
+      # SECTION 1 - cluster level configuration
+
+      # this task discovers information about the existing state of the cluster
+      # tasks declares variable cluster, a JSON list of cluster information
+      - name: gather complete configuration info from the CVO instance
+        na_ontap_info:
+          state: info
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+        register: cluster
+
+      # IS THIS STILL NEEDED? Commenting while using temp licenses
+      #- name: ensure all required license codes applied to cluster
+      #  na_ontap_license:
+      #    state: present
+      #    hostname: "{{ netapp_hostname }}"
+      #    username: "{{ netapp_username }}"
+      #    password: "{{ netapp_password }}"    
+      #    license_codes: "{{ item }}"
+      #    validate_certs: false
+      #    https: true
+      #  loop: "{{ license_codes }}"
+
+      # this task configures AutoSupport on each node
+      - name: configure autosupport on each node in the cluster
+        na_ontap_autosupport:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          node_name: "{{ item }}"
+          transport: "{{ netapp_transport }}"
+          from_address: "{{ item }}@nbcuni.com"
+          proxy_url: "{{ netapp_proxy }}"
+          mail_hosts: "{{ mail_host }}"
+          https: true
+          validate_certs: false
+        with_items: "{{ cluster.ontap_info.cluster_node_info }}"
+
+      # this task ensures that the failover policy for each node MGMT LIF is configured to be local only
+      # assumes node MGMT LIFs have 'mgmt1' in name, and no other LIFs do
+      # STILL REQUIRED???
+      #- name: configure local only failover policy on MGMT LIFs
+      #  na_ontap_interface:
+      #    state: present
+      #    hostname: "{{ netapp_hostname }}"
+      #    username: "{{ netapp_username }}"
+      #    password: "{{ netapp_password }}"
+      #    vserver: "{{ item.value.vserver }}"
+      #    interface_name: "{{ item.key }}"
+      #    failover_policy: local-only
+      #  when: "{{ 'mgmt1' in item.key }}"
+      #  with_items: "{{ cluster.ontap_info.net_interface_info|dict2items }}"
+
+      # STILL REQUIRED?
+      # this task creates a snapmirror interface on each cluster node
+      # improvement idea: pull IP from predefined range?
+      #- name: creates a snapmirror LIF on each cluster node
+      #  na_ontap_interface:
+       #   state: present
+        #  hostname: "{{ netapp_hostname }}"
+        #  username: "{{ netapp_username }}"
+        #  password: "{{ netapp_password }}"
+        #  interface_name: "{{ item | replace('-', '_') }}_sm01"
+        #  vserver: "{{ item }}"
+        #  role: data
+        #  failover_policy: local-only
+        #  https: true
+        #  validate_certs: false
+      #  with_items: "{{ cluster.ontap_info.cluster_node_info }}"
+
+      # this task configures the cluster to use all NBCU NTP servers
+      # Uncomment once NTP forewall rules implemented
+      #- name: set NTP server config
+      #  na_ontap_ntp:
+      #    state: present
+      #    version: auto
+      #    server_name: "{{ item }}"
+      #    hostname: "{{ netapp_hostname }}"
+      #    username: "{{ netapp_username }}"
+      #    password: "{{ netapp_password }}"
+      #    https: true
+      #    validate_certs: false
+      #  loop: "{{ ntp_servers }}"
+
+      # this task configures 3 DNS servers on the cluster
+      # DNS servers vary by site and should be obtained from DNS Locator
+      # Inputs: DNS server list will need to be passed to playbook at run time
+      - name: configure DNS on named SVM
+        na_ontap_dns:
+          state: present
+          domains: "{{ netapp_domain }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+          vserver: "{{ netapp_vserver }}"
+          nameservers: 
+            - "{{ dns1 }}"
+            - "{{ dns2 }}"
+            - "{{ dns3 }}"
+
+      # this task configures SNMP communities on the cluster
+      - name: set SNMP communities
+        na_ontap_snmp:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          community_name: "{{ item }}"
+          access_control: 'ro'
+          https: true
+          validate_certs: false
+        loop: "{{ snmp_communities }}"
+
+      # this task configures SNMP trap hosts on the cluster
+      - name: set SNMP trap hosts
+        na_ontap_snmp_traphosts:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          ip_address: "{{ item }}"
+          https: true
+          validate_certs: false
+        loop: "{{ snmp_trap_hosts }}"
+
+      # set cron job schedules for snap and dedupe
+      - name: Setup Cron Job nightly10pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true 
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly10pm', '-hour', '22', '-minute', '0' ]
+      - name: Setup Cron Job nightly11pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true 
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly11pm', '-hour', '23', '-minute', '0' ]   
+      - name: Setup Cron Job Nightly12pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true      
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly12pm', '-hour', '0', '-minute', '0' ]             
+      - name: Setup Cron Job Nightly1am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true         
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly1am', '-hour', '1', '-minute', '0' ]           
+      - name: Setup Cron Job Nightly2am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true              
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly2am', '-hour', '2', '-minute', '0' ]            
+      - name: Setup Cron Job Nightly3am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly3am', '-hour', '3', '-minute', '0' ]
+      - name: Setup Cron Job Nightly4am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly4am', '-hour', '4', '-minute', '0' ]          
+      - name: Setup Cron Job Dedupe10pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe10pm', '-hour', '21', '-minute', '0' ]             
+      - name: Setup Cron Job Dedupe11pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                     
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe11pm', '-hour', '22', '-minute', '0' ]            
+      - name: Setup Cron Job Dedupe12pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                         
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe12pm', '-hour', '23', '-minute', '0' ]      
+      - name: Setup Cron Job Dedupe1am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                         
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe1am', '-hour', '0', '-minute', '0' ]  
+      - name: Setup Cron Job Dedupe2am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                             
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe2am', '-hour', '1', '-minute', '0' ]           
+      - name: Setup Cron Job Dedupe3am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                                 
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe3am', '-hour', '2', '-minute', '0' ]         
+      - name: Setup Cron Job Dedupe4am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                                      
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe4am', '-hour', '3', '-minute', '0' ]
+
+      # this task creates standrad RBAC permissions on the cluster
+      # required format for input variable RBAC is as follows (define in vars file/AWX as should remain constant):
+      # RBAC:
+      #  group1:
+      #    name: Active directory group name (DOMAIN\group_name)
+      #    applications: list of allowed login methods (ontapi,ssh,http,console,etc)
+      #    role_name: NetApp role to be granted (e.g. vsadmin)
+      #  group2:
+      #    name: Active directory group name (DOMAIN\group_name)
+      #    applications: list of allowed login methods (ontapi,ssh,http,console,etc)
+      #    role_name: NetApp role to be granted (e.g. vsadmin)
+      - name: configure standard RBAC permissions on cluster admin SVM
+        na_ontap_user:
+          state: present
+          name: "{{ item.value.name }}"
+          application: "{{ item.value.applications }}"
+          authentication_method: domain
+          role_name: "{{ item.value.role_name }}"
+          svm: "{{ netapp_admin_svm }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          validate_certs: false
+          https: true
+        loop: "{{ lookup('dict', RBAC) }}"
+ 
+      # SECTION 2 - SVM standardisation
+
+      # this task ensures cifs and nfs are enabled on all data SVMs in the cluster
+      - name: ensure all data SVMs have CIFS and NFS protocls enabled
+        na_ontap_svm:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+          name: "{{ item.key }}"
+          allowed_protocols: cifs,nfs
+        when: "{{ 'data' in item.value.vserver_type }}"
+        with_items: "{{ cluster.ontap_info.vserver_info|dict2items }}"
+
+      # NEED TO LOOP THESE TASKS OVER ALL SVMs ON CLUSTER!!!
+
+      # configure snapshot policies
+      - name: ensures default snapshot policies are configured
+        na_ontap_snapshot_policy:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          vserver: "{{ netapp_data_svm }}"
+          https: true
+          validate_certs: false
+          name: "NBCU_{{ item }}"
+          schedule: "nightly{{ item }}"
+          count: 7
+          snapmirror_label: "nightly{{ item }}"
+          enabled: true
+        loop: "{{ policy_times }}"
+
+      # configure snapmirror policies are configured
+      - name: ensures default Prod and Dev snapmirror policies are configured
+        na_ontap_snapmirror_policy:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          vserver: "{{ netapp_data_svm }}"
+          https: true
+          validate_certs: false
+          policy_name: "{{ item.value.name }}"
+          policy_type: "{{ item.value.type }}"
+          transfer_priority: "{{ item.value.priority }}"
+          tries: "{{ item.value.tries }}"
+          ignore_atime: no
+          snapmirror_label: nightly
+          keep: "{{ item.value.keep }}"
+          restart: "{{ item.value.restart }}"
+        loop: "{{ lookup('dict', snapmirror_policies) }}"
+
+      # efficiency policy times list defined in AWX extra variables
+      - name: ensures default efficiency policies are configured
+        na_ontap_efficiency_policy:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          vserver: "{{ netapp_data_svm }}"
+          https: yes
+          validate_certs: false
+          policy_name: "dedupe{{ item }}"
+          schedule: "dedupe{{ item }}"
+          duration: '1'
+          enabled: true
+        loop: "{{ policy_times }}"
+
+      # set and configure the default NFS export policy
+      # NOTE: need to configure VLAN list more narrowly for CVO instances
+      - name: Export Policy
+        na_ontap_export_policy: 
+          state: present
+          name: "{{ export_policy }}"
+          vserver: "{{ netapp_data_svm }}" 
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+      - name: Setup rules 
+        na_ontap_export_policy_rule: 
+          state: present 
+          policy_name: "{{ export_policy }}" 
+          vserver: "{{ netapp_data_svm }}" 
+          client_match: 0.0.0.0/0  
+          ro_rule: any 
+          rw_rule: any 
+          super_user_security: sys 
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}" 
+          https: true
+          validate_certs: false

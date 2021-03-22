@@ -1,0 +1,8 @@
+---
+  - name: Play to invoke ontap_cfg role on ustest inventory group
+    hosts: ustest
+
+    tasks:
+      - name: Execute role ontap_cfg
+        include_role:
+          name: ontap_cfg

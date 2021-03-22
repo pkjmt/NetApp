@@ -1,0 +1,25 @@
+---
+  - hosts: localhost
+    collections:
+      - netapp.ontap
+    gather_facts: false
+    tasks:
+      - name: set SNMP community
+        na_ontap_snmp:
+          state: "{{ state }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          community_name: "{{ netapp_snmp_comm }}"
+          access_control: "{{ netapp_access }}"
+          https: true
+          validate_certs: false
+      - name: set SNMP trap host
+        na_ontap_snmp_traphosts:
+          state: "{{ state }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          ip_address: "{{ netapp_snmp_id }}"
+          https: true
+          validate_certs: false

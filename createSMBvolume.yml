@@ -1,0 +1,85 @@
+---
+- hosts: localhost
+  collections: 
+  - netapp.ontap
+  gather_facts: false
+  tasks:
+  - name: Export Policy Volume
+    na_ontap_export_policy: 
+      state: "{{ state }}"
+      name: "{{ volname }}_cifs"
+      vserver: "{{ vservername }}"
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false  
+  - name: Create Volume
+    na_ontap_volume: 
+      state: "{{ state }}"      
+      name: "{{ volname }}"
+      junction_path: "/vol/{{ volname }}"
+      is_infinite: false
+      comment: "{{ owner }}"
+      size_unit: "{{ unit }}"
+      volume_security_style: ntfs
+      percent_snapshot_space: 10
+      wait_for_completion: true      
+      aggregate_name: "{{ aggregate }}"
+      size: "{{ size }}"   
+      space_guarantee: none
+      vserver: "{{ vservername }}" 
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Export Policy Qtree
+    na_ontap_export_policy: 
+      state: "{{ state }}"
+      name: "{{ volname }}_qtree"
+      vserver: "{{ vservername }}" 
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Create Qtree
+    na_ontap_qtree:
+      state: present
+      name: "{{ volname }}_qtree"
+      flexvol_name: "{{ volname }}"
+      export_policy: "vol"
+      security_style: ntfs
+      oplocks: disabled
+      unix_permissions:
+      vserver: "{{ vservername }}"
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Create CIFS share for volume
+    na_ontap_cifs:
+      state: "{{ state }}" 
+      share_name: "{{ smb_share }}$"
+      vserver: "{{ vservername }}"
+      path: "/vol/{{ volname }}/"
+      hostname: "{{ netapp_hostname }}" 
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      share_properties: browsable
+      https: true
+      validate_certs: false
+  - name: Create CIFS share for qtree
+    na_ontap_cifs:
+      state: "{{ state }}" 
+      share_name: "{{ smb_share }}"
+      vserver: "{{ vservername }}"
+      path: "/vol/{{ volname }}/{{ volname }}_qtree/"
+      hostname: "{{ netapp_hostname }}" 
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      share_properties: browsable
+      https: true
+      validate_certs: false

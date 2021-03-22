@@ -1,0 +1,18 @@
+---
+- hosts: ustest
+  collections:
+    - netapp.ontap
+  tasks:
+  - name: Load password from encrypted file
+    include_vars:
+      file: host_vars/admin_pass
+    no_log: true
+
+  - name: Gather information from NetApp cluster
+    na_ontap_info:
+      hostname: "{{ cluster }}"
+      username: "{{ user }}"
+      password: "{{ test_pass }}"
+      state: info
+      https: true
+      validate_certs: false

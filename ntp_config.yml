@@ -1,0 +1,16 @@
+---
+  - hosts: localhost
+    collections:
+      - netapp.ontap
+    gather_facts: false
+    tasks:
+      - name: set NTP server config
+        na_ontap_ntp:
+          state: "{{ state }}"
+          version: auto
+          server_name: "{{ ntp_servername }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false

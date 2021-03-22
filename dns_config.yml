@@ -1,0 +1,20 @@
+---
+  - hosts: localhost
+    collections:
+      - netapp.ontap
+    gather_facts: false
+    tasks:
+        - name: configure DNS on named SVM
+          na_ontap_dns:
+            state: "{{ state }}"
+            domains: "{{ netapp_domain }}"
+            hostname: "{{ netapp_hostname }}"
+            username: "{{ netapp_username }}"
+            password: "{{ netapp_password }}"
+            https: true
+            validate_certs: false
+            vserver: "{{ netapp_vserver }}"
+            nameservers: 
+                - "{{ dns1 }}"
+                - "{{ dns2 }}"
+                - "{{ dns3 }}"

@@ -1,0 +1,15 @@
+---
+  - hosts: localhost
+    collections: 
+    - netapp.ontap
+    gather_facts: false
+    tasks:
+      - name: Rename Node
+        na_ontap_node:
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          from_name: "{{ netapp_oldnodename }}"
+          name: "{{ netapp_newnodename }}"
+          https: true
+          validate_certs: false

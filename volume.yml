@@ -1,0 +1,20 @@
+---
+- hosts: localhost
+  collections: 
+  - netapp.ontap
+  gather_facts: false
+  tasks:
+  - name: volumemodule
+    na_ontap_volume: 
+      state: "{{ state }}"
+      name: "{{ volname }}"
+      aggregate_name: "{{ aggregate }}"
+      size: "{{ size }}"
+      size_unit: gb
+      space_guarantee: none
+      vserver: "{{ vservername }}" 
+      hostname: "{{ hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false  

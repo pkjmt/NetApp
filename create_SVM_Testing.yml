@@ -1,0 +1,116 @@
+---
+  - hosts: localhost
+    collections: 
+    - netapp.ontap
+    gather_facts: false
+    tasks:
+      - name: Create SVM
+        na_ontap_svm:
+          name: "{{ vservername }}"
+          root_volume: "{{ vservername }}_root"
+          root_volume_aggregate: "{{ aggregate }}"
+          root_volume_security_style: unix
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          allowed_protocols: nfs,cifs
+          validate_certs: false
+          https: true
+      - name: Create interface
+        na_ontap_interface:
+          interface_name: "{{ vservername }}_lif1"
+          home_port: e0a
+          home_node: useclnsnp101-01-01
+          role: data
+          protocols: nfs
+          admin_status: up
+          failover_policy: local-only
+          is_auto_revert: true
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"           
+          address: "{{ address }}"
+          netmask: "{{ netmask }}"
+          vserver: "{{ vservername }}"
+          validate_certs: false
+          https: true
+      - name: change nfs status
+        na_ontap_nfs:
+          service_state: started
+          vserver: "{{ vservername }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"         
+          nfsv3: enabled
+          nfsv4: disabled
+          nfsv41: disabled
+          tcp: enabled
+          udp: enabled
+          vstorage_state: disabled
+          validate_certs: false
+          https: true
+      - name: Setup default rules
+        na_ontap_export_policy_rule:
+          policy_name: default
+          vserver: "{{ vservername }}"
+          client_match: 0.0.0.0/0
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"         
+          ro_rule: any
+          rw_rule: any
+          super_user_security: none
+          validate_certs: false
+          https: true
+      - name: Create SVM Route
+        na_ontap_net_routes:
+          state: present
+          vserver: "{{ vservername }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          destination: 0.0.0.0/0
+          gateway: "{{ gateway }}"
+          validate_certs: false
+          https: true
+      - name: Export Policy qtree
+        na_ontap_export_policy: 
+          state: "{{ state }}"
+          name: "vol"
+          vserver: "{{ vservername }}" 
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false       
+      - name: Create Qtree
+        na_ontap_qtree:
+          state: present
+          name: "vol"
+          flexvol_name: "{{ vservername }}_root"
+          export_policy: "vol"
+          security_style: unix
+          oplocks: disabled
+          unix_permissions:
+          vserver: "{{ vservername }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+      - name: Setup rules qtree
+        na_ontap_export_policy_rule: 
+          state: "{{ state }}" 
+          policy_name: "vol" 
+          vserver: "{{ vservername }}" 
+          client_match: 0.0.0.0/0  
+          ro_rule: any 
+          rw_rule: any 
+          super_user_security: sys 
+          hostname: "{{ netapp_hostname }}" 
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false          
+          
+          

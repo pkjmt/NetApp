@@ -1,0 +1,17 @@
+---
+- hosts: localhost
+  collections:
+    - netap.ontap
+  gather_facts: false  
+  tasks:
+  - name: NetApp licensing
+    na_ontap_license:
+      state: "{{ state }}"
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"    
+      license_codes: "{{ item }}"
+      validate_certs: false
+      https: true
+    loop: "{{ lic_code }}"
+

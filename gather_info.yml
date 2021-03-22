@@ -1,0 +1,54 @@
+---
+- hosts: cvo_east
+  collections:
+    - netapp.ontap
+    - community.general
+  gather_facts: false
+  tasks:
+  - name: Load password from encrypted file
+    include_vars:
+      file: host_vars/admin_pass
+    no_log: true
+
+  - name: Gather information from NetApp cluster
+    na_ontap_info:
+      hostname: "{{ cluster }}"
+      username: "{{ user }}"
+      password: "{{ azure_pass }}"
+      state: info
+      https: true
+      validate_certs: false
+      gather_subset: aggregate_info,cluster_node_info,cluster_identity_info,disk_info,net_interface_info,vserver_info
+    register: netapp
+
+#  - name: Output gathered cluster information
+#    debug:
+#      msg: "{{ item }}"
+#    with_items: "{{ netapp.ontap_info.cluster_identity_info }}"
+
+#  - name: Output gathered node info
+#    debug:
+#      msg: "{{ (netapp.ontap_info.cluster_node_info|dict2items).0.value.node_name }}"
+#    with_items: "{{ netapp.ontap_info.cluster_node_info }}"
+
+#  - name: Output all aggregate info
+#    debug:
+#      msg: "{{ netapp.ontap_info.aggregate_info }}"
+# "{{ item }}"
+#    with_items: "{{ netapp.ontap_info.aggregate_info }}"
+
+#  - name: determine number of disks per node
+#    debug:
+#      msg: "{{ (netapp.ontap_info.disk_info | count / netapp.ontap_info.cluster_node_info | count) | round(0,'floor') | int }}"
+
+  - name: output interface info
+    debug:
+      msg: "{{ item.value.vserver }}"
+    when: "{{ 'mgmt1' in item.key }}"
+    with_items: "{{ netapp.ontap_info.net_interface_info|dict2items }}"
+
+  - name: output vserver info
+    debug:
+      msg: "{{ item }}"
+    with_items: "{{ netapp.ontap_info.vserver_info }}"
+

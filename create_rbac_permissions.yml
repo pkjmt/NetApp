@@ -1,0 +1,31 @@
+---
+  - hosts: localhost
+    collections:
+      - netapp.ontap
+    gather_facts: false
+    tasks:
+      # this task creates standrad RBAC permissions on the cluster
+      # required format for input variable RBAC is as follows (define in vars file/AWX as should remain constant):
+      # RBAC:
+      #  group1:
+      #    name: Active directory group name (DOMAIN\group_name)
+      #    applications: list of allowed login methods (ontapi,ssh,http,console,etc)
+      #    role_name: NetApp role to be granted (admin, readonly, etc.)
+      #  group2:
+      #    name: Active directory group name (DOMAIN\group_name)
+      #    applications: list of allowed login methods (ontapi,ssh,http,console,etc)
+      #    role_name: NetApp role to be granted (admin, readonly, etc.)
+      - name: configure standard RBAC permissions on cluster
+        na_ontap_user:
+          state: present
+          name: "{{ item.value.name }}"
+          application: "{{ item.value.applications }}"
+          authentication_method: domain
+          role_name: "{{ item.value.role_name }}"
+          svm: "{{ netapp_hostname }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          validate_certs: false
+          https: true
+        loop: "{{ lookup('dict', RBAC) }}"

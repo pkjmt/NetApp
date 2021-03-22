@@ -1,0 +1,21 @@
+---
+  - hosts: localhost
+    collections: 
+    - netapp.ontap
+    gather_facts: false
+    tasks:
+      - name: Create_cifs_server
+        na_ontap_cifs_server:
+         state: present
+         cifs_server_name: "{{ svm_name }}"
+         vserver: "{{ svm_name }}"
+         service_state: started
+         domain: stg-tfayd.com
+         ou: OU=Storage,OU=US-USH,OU=Servers,DC=stg-tfayd,DC=com
+         admin_user_name: "{{ admin_user_name }}"
+         admin_password: "{{ domain_pwd }}"
+         hostname: "{{ netapp_hostname }}"
+         username: "{{ netapp_username }}"
+         password: "{{ netapp_password }}"
+         validate_certs: false
+         https: true

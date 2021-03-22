@@ -1,0 +1,80 @@
+---
+- hosts: localhost
+  collections: 
+  - netapp.ontap
+  gather_facts: false
+  tasks:
+  - name: Setup rules qtree
+    na_ontap_export_policy_rule: 
+      state: "{{ state }}" 
+      policy_name: "{{ volname }}qtree" 
+      vserver: "{{ vservername }}" 
+      client_match: 0.0.0.0/0  
+      ro_rule: any 
+      rw_rule: any 
+      super_user_security: sys 
+      hostname: "{{ hostname }}" 
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Delete Qtree
+    na_ontap_qtree:
+      state: "{{ state }}" 
+      name: "{{ volname }}_qtree"
+      flexvol_name: "{{ volname }}"
+      export_policy: "{{ volname }}qtree"
+      security_style: unix
+      oplocks: disabled
+      unix_permissions:
+      vserver: "{{ vservername }}"
+      hostname: "{{ hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Export Policy qtree
+    na_ontap_export_policy: 
+      state: "{{ state }}"
+      name: "{{ volname }}qtree"
+      vserver: "{{ vservername }}" 
+      hostname: "{{ hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Export Policy
+    na_ontap_export_policy: 
+      state: "{{ state }}"
+      name: "{{ volname }}"
+      vserver: "{{ vservername }}" 
+      hostname: "{{ hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Delete rules 
+    na_ontap_export_policy_rule: 
+      state: "{{ state }}" 
+      policy_name: "{{ volname }}" 
+      vserver: "{{ vservername }}" 
+      client_match: 0.0.0.0/0  
+      ro_rule: any 
+      rw_rule: any 
+      super_user_security: sys 
+      hostname: "{{ hostname }}" 
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Delete Volume
+    na_ontap_volume: 
+      state: "{{ state }}"
+      name: "{{ volname }}"
+      vserver: "{{ vservername }}" 
+      hostname: "{{ hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      junction_path: "/vol/{{ volname }}"
+      https: true
+      validate_certs: false

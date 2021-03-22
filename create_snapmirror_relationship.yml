@@ -1,0 +1,36 @@
+---
+# NOTE: This playbook must be run on the DESTINATION system
+    - hosts: localhost
+      collections:
+        - netapp.ontap
+      gather_facts: false
+      tasks:
+        - name: ensure destination SVM exists
+          na_ontap_svm:
+            state: present
+            hostname: "{{ netapp_hostname }}"
+            username: "{{ netapp_username }}"
+            password: "{{ netapp_password }}"
+            https: true
+            validate_certs: false
+            name: "{{ netapp_dest_svm }}"
+            root_volume: "{{ netapp_dest_svm }}_root"
+            root_volume_security_style: ntfs
+            allowed_protocols: nfs,cifs
+
+        - name: create a snapmirror relationship to replicate data to a secondary site
+          na_ontap_snapmirror:
+            state: present
+            # the following three fields should target the destination (receiving) system
+            hostname: "{{ netapp_hostname }}"
+            username: "{{ netapp_username }}"
+            password: "{{ netapp_password }}"
+            https: true
+            validate_certs: false
+            source_vserver: "{{ netapp_src_svm }}"
+            destination_vserver: "{{ netapp_dest_svm }}"
+            identity_preserve: false
+            policy: "{{ netapp_policy }}"
+            schedule: "nightly{{ netapp_schedule }}"
+            max_transfer_rate: "{{ transfer_rate }}"
+            initialize: false

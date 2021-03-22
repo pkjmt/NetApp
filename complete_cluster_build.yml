@@ -1,0 +1,416 @@
+---
+# author: Graeme Anderson 
+# Complete NetApp cluster build to NBCU standards
+# Assumes that device has been racked, wired, and initial configuration performed by a NetApp field engineer
+# Assumes initial config includes:
+#  node naming
+#  intercluster LIFs
+#  node mgmt LIFs
+#  cluster mgmt LIFs
+# configuration of broadcast domains & virtual interfaces
+
+# LIST REQUIRED INPUT VARIABLES HERE
+# TO BE SUPPLIED IN PLAYBOOK CALL (potentially different for each array)
+# netapp_hostname
+# netapp_username
+# netapp_password
+# license_codes - YAML list of license codes to be applied to cluster
+# dns1,dns2,dns3 - DNS server hostnames (all 3 required)
+# tunnel_svm_ip - IP address for the domain tunnel SVM
+# tunnel_svm_mask - Netmask for the domain tunnel SVM
+# tunnel_svm_name - Name of the domain tunnel SVM
+# VARS TO BE HELD IN VARS FILES/AWX (constant across all arrays)
+# ntp_servers - YAML list of NTP servers
+# snmp_communities - YAML list of SNMP communities
+# snmp_trap_hosts - YAML list of SNMP trap hosts
+# policy_times - list of times at which schedules/snapmirror/dedupe jobs should run
+# netapp_proxy - standard proxy server hostname
+# mail_host - standard mail relay hostname
+# RBAC - standardised list of RBAC permissions to be assigned
+# snapmirror_policies - YAML dictionary of default snapmirror policy settings
+
+  - hosts: localhost
+    collections:
+      - netapp.ontap
+    gather_facts: false
+    tasks:
+
+      # SECTION 1 - cluster level configuration
+
+      # this task discovers information about the existing state of the cluster
+      # tasks declares variable cluster, a JSON list of cluster information
+      - name: gather node, disk and aggregate info from filer
+        na_ontap_info:
+          state: info
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+          gather_subset: cluster_node_info,aggregate_info,disk_info,net_interface_info
+        register: cluster
+
+      - name: ensure all required license codes applied to cluster
+        na_ontap_license:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"    
+          license_codes: "{{ item }}"
+          validate_certs: false
+          https: true
+        loop: "{{ license_codes }}"
+
+      # this task create the CORP IPspace
+      - name: create CORP IPSpace
+        na_ontap_ipspace:
+          state: present
+          name: corp
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+
+      # this task creates the standard broadcast domains
+      - name: create broadcast domain
+        na_ontap_broadcast_domain:
+          state: present
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          hostname: "{{ netapp_hostname }}"
+          name: mgmt
+          mtu: 1500
+          ipspace: corp
+          ports: TBC
+
+      # this task ensures that the failover policy for each MGMT LIF is configured to be local only
+      # assumes MGMT LIFs have 'mgmt' in name, and no other LIFs do
+      - name: configure local only failover policy on MGMT LIFs
+        na_ontap_interface:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          vserver: "{{ item.value.vserver }}"
+          interface_name: "{{ item.key }}"
+          failover_policy: local-only
+        when: "{{ 'mgmt' in item.key }}"
+        with_items: "{{ cluster.ontap_info.net_interface_info|dict2items }}"
+
+      # this task creates a snapmirror interface on each cluster node
+      # improvement idea: pull IP from predefined range?
+      - name: creates a snapmirror LIF on each cluster node
+        na_ontap_interface:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          interface_name: "{{ item | replace('-', '_') }}_sm01"
+          vserver: "{{ item }}"
+          role: data
+          failover_policy: local-only
+          https: true
+          validate_certs: false
+        loop: {{" cluster.ontap_info.cluster_node_info "}}
+
+      # this task configures the cluster to use all NBCU NTP servers
+      #- name: set NTP server config
+      #  na_ontap_ntp:
+      #    state: present
+      #    version: auto
+      #    server_name: "{{ item }}"
+      #    hostname: "{{ netapp_hostname }}"
+      #    username: "{{ netapp_username }}"
+      #    password: "{{ netapp_password }}"
+      #    https: true
+      #    validate_certs: false
+      #  loop: "{{ ntp_servers }}"
+
+      # this task configures 3 DNS servers on the cluster
+      # DNS servers vary by site and should be obtained from DNS Locator
+      # Inputs: DNS server list will need to be passed to playbook at run time
+      - name: configure DNS on named SVM
+        na_ontap_dns:
+          state: present
+          domains: "{{ netapp_domain }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+          vserver: "{{ netapp_vserver }}"
+          nameservers: 
+            - "{{ dns1 }}"
+            - "{{ dns2 }}"
+            - "{{ dns3 }}"
+
+      # this task configures AutoSupport on each node
+      - name: configure autosupport on each node in the cluster
+        na_ontap_autosupport:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          node_name: "{{ item }}"
+          transport: "{{ netapp_transport }}"
+          from_address: "{{ item }}@nbcuni.com"
+          proxy_url: "{{ netapp_proxy }}"
+          mail_hosts: "{{ mail_host }}"
+          https: true
+          validate_certs: false
+        with_items: "{{ cluster.ontap_info.cluster_node_info }}"
+
+      # this task configures SNMP communities on the cluster
+      - name: set SNMP communities
+        na_ontap_snmp:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          community_name: "{{ item }}"
+          access_control: 'ro'
+          https: true
+          validate_certs: false
+        loop: "{{ snmp_communities }}"
+
+      # this task configures SNMP trap hosts on the cluster
+      - name: set SNMP trap hosts
+        na_ontap_snmp:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          ip_address: "{{ item }}"
+          https: true
+          validate_certs: false
+        loop: "{{ snmp_trap_hosts }}"
+
+      # set cron job schedules for snap and dedupe
+      - name: Setup nightly cron jobs
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true 
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', "nightly{{ item }}", '-hour', "{{ item }}", '-minute', '0' ]
+        with_items: "{{ policy_times }}"
+
+      - name: Setup dedupe cron jobs
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', "dedupe{{ item }}", '-hour', "{{ item }}", '-minute', '0' ]
+        with_items: "{{ dedupe_jobs }}"
+
+      # this task creates standrad RBAC permissions on the cluster
+      # required format for input variable RBAC is as follows (define in vars file/AWX as should remain constant):
+      # RBAC:
+      #  group1:
+      #    name: Active directory group name (DOMAIN\group_name)
+      #    applications: list of allowed login methods (ontapi,ssh,http,console,etc)
+      #    role_name: NetApp role to be granted (e.g. vsadmin)
+      #  group2:
+      #    name: Active directory group name (DOMAIN\group_name)
+      #    applications: list of allowed login methods (ontapi,ssh,http,console,etc)
+      #    role_name: NetApp role to be granted (e.g. vsadmin)
+      - name: configure standard RBAC permissions on cluster
+        na_ontap_user:
+          state: present
+          name: "{{ item.value.name }}"
+          application: "{{ item.value.applications }}"
+          authentication_method: domain
+          role_name: "{{ item.value.role_name }}"
+          svm: "{{ netapp_hostname }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          validate_certs: false
+          https: true
+        loop: "{{ lookup('dict', RBAC) }}"
+
+      # SECTION 2: Storage configuration (aggrs and disks)
+
+      # this task assigns disks in the cluster to each node. Assumes 3 disks per node already used for root aggrs
+      # improvement idea: check number of disks, and change operation if only 12 disks attached (hybrid aggrs)
+      - name: ensure disks are  assigned evenly to each node in the cluster
+        na_ontap_disks:
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+          node: "{{ item }}"
+          disk_count: "{{ (cluster.ontap_info.ontap_info.disk_info | count / netapp.ontap_info.cluster_node_info | count) | int - 3 }}"
+        with_items: "{{ cluster.ontap_info.cluster_node_info }}"
+
+      # this task creates one data aggregate on each node. relies on disk asisgnment task above.
+      #improvement idea: pivot to hybrid agg creation if small cluster
+      - name: ensure one data aggregate created on each node as per NBCU standards
+        na_ontap_aggregate:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+          nodes: "{{ item }}"
+          service_state: online
+          name: "{{ item | replace('-', '_') }}_data0 }}"
+          disk_count: "{{ (cluster.ontap_info.ontap_info.disk_info | count / netapp.ontap_info.cluster_node_info | count) | int - 3 }}"
+          wait_for_online: true
+          time_out: "{{ aggr_timeout }}"
+          snaplock_type: non_snaplock
+        with_items: "{{ cluster.ontap_info.cluster_node_info }}"
+
+      # SECTION 3: SVM configuration - default SVMs only
+      # Site specific SVMs will be created using the individual SVM playbook
+
+      # This task creates an SVM purely for domain tunnelling purposes, subsequent task creates an interface for that SVM on each node
+      # creates SVM on node 1 data aggr created above
+      - name: Create SVM
+        na_ontap_svm:
+          name: "{{ tunnel_svm_name }}"
+          root_volume: "{{ tunnel_svm_name }}_root"
+          root_volume_aggregate: "{{ aggregate }}"
+          root_volume_security_style: ntfs
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          allowed_protocols: nfs,cifs
+          validate_certs: false
+          https: true
+      - name: Create interface
+        na_ontap_interface:
+          interface_name: "{{ tunnel_svm_name }}_lif1"
+          home_port: "{{ home_port }}"
+          home_node: "useclnsnp101-01"
+          role: data
+          protocols: nfs,cifs
+          admin_status: up
+          failover_policy: local-only
+          is_auto_revert: true
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"           
+          address: "{{ tunnel_svm_ip }}"
+          netmask: "{{ tunnel_svm_mask }}"
+          vserver: "{{ tunnel_svm_name }}"
+          validate_certs: false
+          https: true
+
+      # Add tasks to create default SVMs for corp, DMZ
+      
+      # SECTION 3b - SVM standardisation
+
+      # this task discovers information about the existing state of the cluster
+      # tasks declares variable svms, a JSON list of SVMs present on this cluster
+      - name: gather vserver info from filer
+        na_ontap_info:
+          state: info
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+          gather_subset: vserver_info
+        register: svms
+
+      # this task ensures cifs and nfs are enabled on all SVMs in the cluster
+      - name: ensure all SVMs have CIFS and NFS protocls enabled
+        na_ontap_svm:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          vserver: "{{ netapp_vserver }}"
+          https: true
+          validate_certs: false
+          name: "{{ item }}"
+          allowed_protocols: cifs,nfs
+        loop: "{{ svms.ontapinfo.vserver_info }}"
+
+      # NEED TO LOOP THESE TASKS OVER ALL SVMs ON CLUSTER!!!
+
+      # configure snapshot policies
+      - name: ensures default snapshot policies are configured
+        na_ontap_snapshot_policy:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          vserver: "{{ netapp_vserver }}"
+          https: true
+          validate_certs: false
+          name: "NBCU_{{ item }}"
+          schedule: "nightly{{ item }}"
+          count: "{{ count }}"
+          snapmirror_label: "nightly{{ item }}"
+          enabled: true
+        loop: "{{ policy_times }}"
+
+      # configure snapmirror policies are configured
+      - name: ensures default Prod and Dev snapmirror policies are configured
+        na_ontap_snapmirror_policy:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          vserver: "{{ netapp_vserver }}"
+          https: true
+          validate_certs: false
+          policy_name: "{{ item.value.name }}"
+          policy_type: "{{ item.value.type }}"
+          transfer_priority: "{{ item.value.priority }}"
+          tries: "{{ item.value.tries }}"
+          ignore_atime: no
+          snapmirror_label: nightly
+          keep: "{{ item.value.keep }}"
+          restart: "{{ item.value.restart }}"
+        loop: "{{ lookup('dict', snapmirror_policies) }}"
+
+      # efficiency policy times list defined in AWX extra variables
+      - name: ensures default efficiency policies are configured
+        na_ontap_efficiency_policy:
+          state: present
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          vserver: "{{ netapp_vserver }}"
+          https: yes
+          validate_certs: false
+          policy_name: "dedupe{{ item }}"
+          schedule: "dedupe{{ item }}"
+          duration: '1'
+          enabled: true
+        loop: "{{ policy_times }}"
+
+      # set and configure the default NFS export policy
+      - name: Export Policy
+        na_ontap_export_policy: 
+          state: present
+          name: "{{ export_policy }}"
+          vserver: "{{ item }}" 
+          hostname: "{{ hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+        loop: "{{ svms.ontapinfo.vserver_info }}"
+      - name: Setup rules 
+        na_ontap_export_policy_rule: 
+          state: present 
+          policy_name: "{{ export_policy }}" 
+          vserver: "{{ item }}" 
+          client_match: 0.0.0.0/0  
+          ro_rule: any 
+          rw_rule: any 
+          super_user_security: sys 
+          hostname: "{{ hostname }}" 
+          username: "{{ username }}" 
+          password: "{{ password }}" 
+          https: true
+          validate_certs: false
+        loop: "{{ svms.ontapinfo.vserver_info }}"

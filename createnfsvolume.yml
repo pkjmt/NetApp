@@ -1,0 +1,90 @@
+---
+- hosts: localhost
+  collections: 
+  - netapp.ontap
+  gather_facts: false
+  tasks:
+  - name: Export Policy
+    na_ontap_export_policy: 
+      state: "{{ state }}"
+      name: "{{ volname }}"
+      vserver: "{{ vservername }}" 
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Create Volume
+    na_ontap_volume: 
+      state: "{{ state }}"      
+      name: "{{ volname }}"
+      junction_path: "/vol/{{ volname }}"
+      is_infinite: false
+      comment: "{{ owner }}"
+      size_unit: "{{ unit }}"
+      volume_security_style: unix
+      percent_snapshot_space: 10
+      wait_for_completion: true      
+      aggregate_name: "{{ aggregate }}"
+      size: "{{ size }}"   
+      space_guarantee: none
+      vserver: "{{ vservername }}" 
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false      
+  - name: Setup rules 
+    na_ontap_export_policy_rule: 
+      state: "{{ state }}" 
+      policy_name: "{{ volname }}" 
+      vserver: "{{ vservername }}" 
+      client_match: 0.0.0.0/0  
+      ro_rule: any 
+      rw_rule: any 
+      super_user_security: sys 
+      hostname: "{{ netapp_hostname }}" 
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Export Policy qtree
+    na_ontap_export_policy: 
+      state: "{{ state }}"
+      name: "{{ volname }}_qtree"
+      vserver: "{{ vservername }}" 
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false       
+  - name: Create Qtree
+    na_ontap_qtree:
+      state: present
+      name: "{{ volname }}_qtree"
+      flexvol_name: "{{ volname }}"
+      export_policy: "{{ volname }}_qtree"
+      security_style: unix
+      oplocks: disabled
+      unix_permissions:
+      vserver: "{{ vservername }}"
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+  - name: Setup rules qtree
+    na_ontap_export_policy_rule: 
+      state: "{{ state }}" 
+      policy_name: "{{ volname }}_qtree" 
+      vserver: "{{ vservername }}" 
+      client_match: 0.0.0.0/0  
+      ro_rule: any 
+      rw_rule: any 
+      super_user_security: sys 
+      hostname: "{{ netapp_hostname }}" 
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false
+

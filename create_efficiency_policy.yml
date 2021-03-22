@@ -1,0 +1,21 @@
+---
+    - hosts: localhost
+      collections:
+        - netapp.ontap
+      gather_facts: false
+      tasks:
+        # efficiency policy times list defined in AWX extra variables
+        - name: ensures default efficiency policies are configured
+          na_ontap_efficiency_policy:
+            state: "{{ state }}"
+            hostname: "{{ netapp_hostname }}"
+            username: "{{ netapp_username }}"
+            password: "{{ netapp_password }}"
+            vserver: "{{ netapp_vserver }}"
+            https: yes
+            validate_certs: false
+            policy_name: "dedupe{{ item }}"
+            schedule: "dedupe{{ item }}"
+            duration: "{{ duration }}"
+            enabled: true
+          loop: "{{ dedupe_policy_times }}"

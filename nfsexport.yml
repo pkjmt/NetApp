@@ -1,0 +1,30 @@
+---
+- hosts: localhost
+  collections: 
+  - netapp.ontap
+  gather_facts: false
+  tasks:
+  - name: Export Policy
+    na_ontap_export_policy: 
+      state: "{{ state }}"
+      name: "{{ export_policy }}"
+      vserver: "{{ vservername }}" 
+      hostname: "{{ hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false  
+  - name: Setup rules 
+    na_ontap_export_policy_rule: 
+      state: "{{ state }}" 
+      policy_name: "{{ export_policy }}" 
+      vserver: "{{ vservername }}" 
+      client_match: 0.0.0.0/0  
+      ro_rule: any 
+      rw_rule: any 
+      super_user_security: sys 
+      hostname: "{{ hostname }}" 
+      username: "{{ username }}" 
+      password: "{{ password }}" 
+      https: true
+      validate_certs: false 

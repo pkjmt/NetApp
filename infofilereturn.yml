@@ -1,0 +1,24 @@
+---
+- hosts: localhost
+  collections: 
+  - netapp.ontap
+  gather_facts: false
+  tasks:
+  - name: Gather information from NetApp cluster Volume_Info
+    na_ontap_info:
+      state: info
+      hostname: "{{ hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false  
+      gather_subset: "{{ subset }}"
+      
+    register: ontap
+  - debug: var=ontap
+
+  - name: Saving data to local file
+    copy:
+      content: "{{ ontap }}"
+      dest: "/tmp/hello.txt"
+    delegate_to: localhost

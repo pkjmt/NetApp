@@ -1,0 +1,24 @@
+---
+    - hosts: localhost
+      collections:
+        - netapp.ontap
+      gather_facts: false
+      tasks:
+        - name: ensures default Prod and Dev snapmirror policies are configured
+          na_ontap_snapmirror_policy:
+            state: "{{ state }}"
+            hostname: "{{ netapp_hostname }}"
+            username: "{{ netapp_username }}"
+            password: "{{ netapp_password }}"
+            vserver: "{{ netapp_vserver }}"
+            https: true
+            validate_certs: false
+            policy_name: "{{ item.value.name }}"
+            policy_type: "{{ item.value.type }}"
+            transfer_priority: "{{ snap_priority }}"
+            tries: "{{ snap_tries }}"
+            ignore_atime: no
+            snapmirror_label: nightly
+            keep: "{{ item.value.keep }}"
+            restart: "{{ restart }}"
+          loop: "{{ lookup('dict', snapmirror_policies) }}"

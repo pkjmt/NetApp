@@ -1,0 +1,36 @@
+- hosts: localhost
+  collections:
+    - netapp.ontap
+  gather_facts: false
+  tasks:
+    - name: gather aggregate info from filer
+      na_ontap_info:
+        state: info
+        hostname: "{{ netapp_hostname }}"
+        username: "{{ netapp_username }}"
+        password: "{{ netapp_password }}"
+        https: true
+        validate_certs: false
+        gather_subset: aggregate_info
+      register: aggrs
+
+    - name: output gathered aggr info
+      debug:
+        msg: "{{ item }}"
+      with_items: "{{ aggrs.ontap_info.aggregate_info }}"
+
+    - name: ensures data aggregates are created according to NBCU standards
+      na_ontap_aggregate:
+        state: "{{ state }}"
+        hostname: "{{ netapp_hostname }}"
+        username: "{{ netapp_username }}"
+        password: "{{ netapp_password }}"
+        https: true
+        validate_certs: false
+        nodes: "{{ netapp_node }}"
+        service_state: "{{ service_state }}"
+        name: "{{ netapp_node | replace('-', '_') }}_data_{{ aggrs.ontap_info.aggregate_info |length }}"
+        disk_count: "{{ data_disk_count }}"
+        wait_for_online: true
+        time_out: "{{ aggr_timeout }}"
+        snaplock_type: non_snaplock

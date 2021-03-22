@@ -1,0 +1,123 @@
+---
+  - hosts: localhost
+    collections: 
+    - netapp.ontap
+    gather_facts: false
+    tasks:
+      - name: Setup Cron Job nightly10pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true 
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly10pm', '-hour', '22', '-minute', '0' ]
+      - name: Setup Cron Job nightly11pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true 
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly11pm', '-hour', '23', '-minute', '0' ]   
+      - name: Setup Cron Job Nightly12pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true      
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly12pm', '-hour', '0', '-minute', '0' ]             
+      - name: Setup Cron Job Nightly1am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true         
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly1am', '-hour', '1', '-minute', '0' ]           
+      - name: Setup Cron Job Nightly2am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true              
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly2am', '-hour', '2', '-minute', '0' ]            
+      - name: Setup Cron Job Nightly3am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly3am', '-hour', '3', '-minute', '0' ]
+      - name: Setup Cron Job Nightly4am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'nightly4am', '-hour', '4', '-minute', '0' ]          
+      - name: Setup Cron Job Dedupe10pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe10pm', '-hour', '21', '-minute', '0' ]             
+      - name: Setup Cron Job Dedupe11pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                     
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe11pm', '-hour', '22', '-minute', '0' ]            
+      - name: Setup Cron Job Dedupe12pm
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                         
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe12pm', '-hour', '23', '-minute', '0' ]      
+      - name: Setup Cron Job Dedupe1am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                         
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe1am', '-hour', '0', '-minute', '0' ]  
+      - name: Setup Cron Job Dedupe2am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                             
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe2am', '-hour', '1', '-minute', '0' ]           
+      - name: Setup Cron Job Dedupe3am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                                 
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe3am', '-hour', '2', '-minute', '0' ]         
+      - name: Setup Cron Job Dedupe4am
+        na_ontap_command:  
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"          
+          validate_certs: false
+          https: true                                      
+          command: [ 'job', 'schedule', 'cron', 'create', '-name', 'dedupe4am', '-hour', '3', '-minute', '0' ]        
+          
+          
+          
+          
+          

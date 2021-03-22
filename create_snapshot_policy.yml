@@ -1,0 +1,22 @@
+---
+    - hosts: localhost
+      collections:
+        - netapp.ontap
+      gather_facts: false
+      tasks:
+        # snap policy times list defined in AWX extra variables
+        - name: ensures default snapshot policies are configured
+          na_ontap_snapshot_policy:
+            state: "{{ state }}"
+            hostname: "{{ netapp_hostname }}"
+            username: "{{ netapp_username }}"
+            password: "{{ netapp_password }}"
+            vserver: "{{ netapp_vserver }}"
+            https: true
+            validate_certs: false
+            name: "NBCU_{{ item }}"
+            schedule: "nightly{{ item }}"
+            count: "{{ count }}"
+            snapmirror_label: "nightly{{ item }}"
+            enabled: true
+          loop: "{{ snap_policy_times }}"

@@ -1,0 +1,16 @@
+---
+    - hosts: localhost
+      collections:
+        - netapp.ontap
+      gather_facts: false
+      tasks:
+        - name: remove a LIF
+          na_ontap_interface:
+            state: "{{ state }}"
+            hostname: "{{ netapp_hostname }}"
+            username: "{{ netapp_username }}"
+            password: "{{ netapp_password }}"
+            interface_name: "{{ netapp_interface }}"
+            vserver: "{{ netapp_vserver }}"
+            https: true
+            validate_certs: false

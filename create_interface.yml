@@ -1,0 +1,20 @@
+---
+    - hosts: localhost
+      collections:
+        - netapp.ontap
+      gather_facts: false
+      tasks:
+        - name: creates a LIF
+          na_ontap_interface:
+            state: "{{ state }}"
+            hostname: "{{ netapp_hostname }}"
+            username: "{{ netapp_username }}"
+            password: "{{ netapp_password }}"
+            interface_name: "{{ netapp_interface }}"
+            home_port: "{{ netapp_port }}"
+            vserver: "{{ netapp_vserver }}"
+            address: "{{ netapp_lif_ip }}"
+            netmask: "{{ netapp_netmask }}"
+            role: "{{ netapp_role }}"
+            https: true
+            validate_certs: false

@@ -1,0 +1,30 @@
+---
+  - hosts: localhost
+    collections:
+      - netapp.ontap
+    gather_facts: false
+    tasks:
+      - name: gather aggregate info from filer
+        na_ontap_info:
+          state: info
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          https: true
+          validate_certs: false
+          gather_subset: cluster_node_info
+        register: nodes
+
+      - name: configure autosupport on first node in the cluster
+        na_ontap_autosupport:
+          state: "{{ state }}"
+          hostname: "{{ netapp_hostname }}"
+          username: "{{ netapp_username }}"
+          password: "{{ netapp_password }}"
+          node_name: "{{ item }}"
+          transport: "{{ netapp_transport }}"
+          from_address: "{{ item }}@nbcuni.com"
+          proxy_url: "{{ netapp_proxy }}"
+          https: true
+          validate_certs: false
+        with_items: "{{ nodes.ontap_info.cluster_node_info }}"

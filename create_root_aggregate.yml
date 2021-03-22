@@ -1,0 +1,21 @@
+- hosts: localhost
+  collections:
+    - netapp.ontap
+  gather_facts: false
+  tasks:
+    - name: ensures root aggregates are created according to NBCU standards
+      na_ontap_aggregate:
+        state: "{{ state }}"
+        hostname: "{{ netapp_hostname }}"
+        username: "{{ netapp_username }}"
+        password: "{{ netapp_password }}"
+        https: true
+        validate_certs: false
+        nodes: "{{ netapp_node }}"
+        service_state: "{{ service_state }}"
+        name: "{{ root_aggr_name }}"
+        disk_count: "{{ root_disk_count }}"
+        wait_for_online: true
+        time_out: "{{ aggr_timeout }}"
+        snaplock_type: non_snaplock
+      

@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  collections: 
+  - netapp.ontap
+  gather_facts: false
+  tasks:
+  - name: Create cifs
+    na_ontap_cifs_server:
+      state: "{{ state }}"
+      vserver: "{{ vservername }}"
+      service_state: stopped
+      cifs_server_name: cifs
+      workgroup: storage
+      hostname: "{{ netapp_hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      https: true
+      validate_certs: false

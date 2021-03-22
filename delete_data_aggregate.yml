@@ -1,0 +1,17 @@
+- hosts: localhost
+  collections:
+    - netapp.ontap
+  gather_facts: false
+  tasks:
+    - name: remove a data aggregate
+      na_ontap_aggregate:
+        state: "{{ state }}"
+        hostname: "{{ netapp_hostname }}"
+        username: "{{ netapp_username }}"
+        password: "{{ netapp_password }}"
+        https: true
+        validate_certs: false
+        nodes: "{{ netapp_node }}"
+        service_state: "{{ service_state }}"
+        name: "{{ netapp_aggr_name }}"
+        unmount_volumes: false
