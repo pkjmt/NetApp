@@ -10,8 +10,8 @@
          cifs_server_name: "{{ svm_name }}"
          vserver: "{{ svm_name }}"
          service_state: started
-         domain: stg-tfayd.com
-         ou: OU=Storage,OU=US-ECL,OU=Servers,DC=stg-tfayd,DC=com
+         domain: xxxxxxxx.com
+         ou: OU=Storage,OU=US-ECL,OU=Servers,DC=stg,DC=com
          admin_user_name: "{{ admin_user_name }}"
          admin_password: "{{ domain_pwd }}"
          hostname: "{{ netapp_hostname }}"
