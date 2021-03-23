@@ -1,6 +1,4 @@
 ---
-# author: Graeme Anderson 
-# Complete NetApp cluster build to NBCU standards
 # Assumes that device has been racked, wired, and initial configuration performed by a NetApp field engineer
 # Assumes initial config includes:
 #  node naming
@@ -112,7 +110,7 @@
           validate_certs: false
         loop: {{" cluster.ontap_info.cluster_node_info "}}
 
-      # this task configures the cluster to use all NBCU NTP servers
+      # this task configures the cluster to use all NTP servers
       #- name: set NTP server config
       #  na_ontap_ntp:
       #    state: present
@@ -152,7 +150,7 @@
           password: "{{ netapp_password }}"
           node_name: "{{ item }}"
           transport: "{{ netapp_transport }}"
-          from_address: "{{ item }}@nbcuni.com"
+          from_address: "{{ item }}"
           proxy_url: "{{ netapp_proxy }}"
           mail_hosts: "{{ mail_host }}"
           https: true
@@ -286,7 +284,7 @@
         na_ontap_interface:
           interface_name: "{{ tunnel_svm_name }}_lif1"
           home_port: "{{ home_port }}"
-          home_node: "useclnsnp101-01"
+          home_node: "xxxxxxxxxxxxx"
           role: data
           protocols: nfs,cifs
           admin_status: up
