@@ -68,7 +68,7 @@
           password: "{{ netapp_password }}"
           node_name: "{{ item }}"
           transport: "{{ netapp_transport }}"
-          from_address: "{{ item }}@nbcuni.com"
+          from_address: "{{ item }}"
           proxy_url: "{{ netapp_proxy }}"
           mail_hosts: "{{ mail_host }}"
           https: true
@@ -332,7 +332,7 @@
           vserver: "{{ netapp_data_svm }}"
           https: true
           validate_certs: false
-          name: "NBCU_{{ item }}"
+          name: "{{ item }}"
           schedule: "nightly{{ item }}"
           count: 7
           snapmirror_label: "nightly{{ item }}"
