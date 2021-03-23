@@ -1,6 +1,4 @@
 ---
-# author: Graeme Anderson 
-# Complete NetApp cluster build to NBCU standards of an Azure CVO instance
 # Assumes that a one or two node CVO system has been deployed via NetApp Cloud Central, but no further configuration has taken place.
 # This Ansible script should be runaimmediately afetr a Terraform job creates the new CVO instance (control with Jenkins?)
 # Assumes initial config includes:
@@ -67,7 +65,7 @@
           password: "{{ netapp_password }}"
           node_name: "{{ item }}"
           transport: "{{ netapp_transport }}"
-          from_address: "{{ item }}@nbcuni.com"
+          from_address: "{{ item }}"
           proxy_url: "{{ netapp_proxy }}"
           mail_hosts: "{{ mail_host }}"
           https: true
@@ -106,7 +104,7 @@
         #  validate_certs: false
       #  with_items: "{{ cluster.ontap_info.cluster_node_info }}"
 
-      # this task configures the cluster to use all NBCU NTP servers
+      # this task configures the cluster to use all NTP servers
       # Uncomment once NTP forewall rules implemented
       #- name: set NTP server config
       #  na_ontap_ntp:
@@ -331,7 +329,7 @@
           vserver: "{{ netapp_data_svm }}"
           https: true
           validate_certs: false
-          name: "NBCU_{{ item }}"
+          name: "{{ item }}"
           schedule: "nightly{{ item }}"
           count: 7
           snapmirror_label: "nightly{{ item }}"
