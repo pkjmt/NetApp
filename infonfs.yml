@@ -6,11 +6,12 @@
   tasks:
   - name: Gather information from NetApp cluster
     na_ontap_info:
+      https: true
+      validate_certs: false
       state: info
       hostname: "{{ hostname }}"
       username: "{{ netapp_username }}"
       password: "{{ netapp_password }}"
       gather_subset: "aggregate_info"
     register: ontap_info
-      https: true
-      validate_certs: false
+
