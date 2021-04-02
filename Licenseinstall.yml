@@ -1,13 +1,13 @@
 ---
 - hosts: localhost
   collections:
-    - netap.ontap
+  - netap.ontap
   gather_facts: false  
   tasks:
   - name: NetApp licensing
     na_ontap_license:
       state: present
-      hostname: "{{ netapp_hostname }}"
+      hostname: "{{ hostname }}"
       username: "{{ netapp_username }}"
       password: "{{ netapp_password }}"
       serial_number: 1-80-000008
