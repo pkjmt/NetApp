@@ -8,7 +8,6 @@
     na_ontap_info:
       https: true
       validate_certs: false
-      state: info
       hostname: "{{ hostname }}"
       username: "{{ netapp_username }}"
       password: "{{ netapp_password }}"
