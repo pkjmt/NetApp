@@ -10,6 +10,6 @@
       hostname: "{{ hostname }}"
       username: "{{ netapp_username }}"
       password: "{{ netapp_password }}"
-      gather_sudset: "vserver_nfs_info"
+      gather_sudset: vserver_nfs_info
       https: true
       validate_certs: false
