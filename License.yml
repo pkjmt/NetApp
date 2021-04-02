@@ -3,12 +3,12 @@
   name: NetApp licensing
   vars:
    login: &login
-   hostname: 192.168.1.50
-    username: ansible
-    password: Password123
+   hostname: 192.168.36.128
+    username: admin
+    password: "{{ passwordntap }}"
     https: true
     validate_certs: false
-    clustername: CLUSTER96
+    clustername: petentap01
   tasks:
   - name: Install Licenses
     na_ontap_cluster:
