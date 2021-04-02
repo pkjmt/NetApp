@@ -15,7 +15,6 @@
       serial_number: 1-80-000008
       cluster_name: "{{ clustername }}"
       license_code: "{{ item }}"
-      <<: *login
     loop:
       - SMKQROWJNQYQSDAAAAAAAAAAAAAA
       - YVUCRRRRYVHXCFABGAAAAAAAAAAA
