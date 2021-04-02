@@ -13,5 +13,5 @@
       license_codes: "{{ item }}"
       validate_certs: false
       https: true
-    loop: "{{ lic_code }}"
+
 
