@@ -1,4 +1,4 @@
-n---
+---
 - hosts: localhost
   collections:
     - netap.ontap
