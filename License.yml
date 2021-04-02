@@ -4,7 +4,7 @@
   vars:
    login: &login
    hostname: 192.168.36.128
-    username: admin
+    username: "{{ userntap }}"
     password: "{{ passwordntap }}"
     https: true
     validate_certs: false
