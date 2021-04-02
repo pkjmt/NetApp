@@ -12,8 +12,6 @@
       password: "{{ netapp_password }}"
       validate_certs: false
       https: true
-      serial_number: 1-80-000008
-      cluster_name: "{{ clustername }}"
       license_code: "{{ item }}"
     loop:
       - SMKQROWJNQYQSDAAAAAAAAAAAAAA
