@@ -10,7 +10,7 @@
       hostname: "{{ netapp_hostname }}"
       username: "{{ netapp_username }}"
       password: "{{ netapp_password }}"    
-      license_codes: "{{ item }}"
+      license_codes: "{{ license_codes }}"
       validate_certs: false
       https: true
 
