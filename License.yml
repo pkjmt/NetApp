@@ -4,8 +4,6 @@
   vars:
    login: &login
    hostname: 192.168.36.128
-    username: "{{ userntap }}"
-    password: "{{ passwordntap }}"
     https: true
     validate_certs: false
     clustername: petentap01
