@@ -11,5 +11,5 @@
       hostname: "{{ hostname }}"
       username: "{{ netapp_username }}"
       password: "{{ netapp_password }}"
-      gather_subset: "volume_info"
+      gather_subset: "volume_space_info"
     register: ontap_info
