@@ -22,7 +22,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "volume_info"
     register: ontap_info
-  - name: Gather Volume Info
+  - name: Gather qtree Info
     na_ontap_info:
       https: true
       validate_certs: false
