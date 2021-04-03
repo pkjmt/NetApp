@@ -1,0 +1,15 @@
+---
+- hosts: localhost
+  collections: 
+  - netapp.ontap
+  gather_facts: false
+  tasks:
+  - name: Gather information from NetApp cluster
+    na_ontap_info:
+      https: true
+      validate_certs: false
+      hostname: "{{ hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      gather_subset: "vserver_nfs_info"
+    register: ontap_info
