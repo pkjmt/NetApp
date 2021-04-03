@@ -74,5 +74,5 @@
       hostname: "{{ hostname }}"
       username: "{{ netapp_username }}"
       password: "{{ netapp_password }}"
-      gather_subset: "security_login_role_infoo"
+      gather_subset: "security_login_role_info"
     register: ontap_info
