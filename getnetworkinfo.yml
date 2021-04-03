@@ -1,0 +1,26 @@
+---
+- hosts: localhost
+  collections: 
+  - netapp.ontap
+  gather_facts: false
+  tasks:
+  - name: Gather information from NetApp cluster
+    na_ontap_info:
+      https: true
+      validate_certs: false
+      hostname: "{{ hostname }}"
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      gather_subset: "net_vlan_info"
+      gather_subset: "net_routes_info"
+      gather_subset: "net_port_broadcast_domain_info"
+      gather_subset: "net_port_info"
+      gather_subset: "net_ipspaces_info"
+      gather_subset: "net_interface_service_policy_info"
+      gather_subset: "net_interface_info"
+      gather_subset: "net_ifgrp_info"
+      gather_subset: "net_firewall_info"
+      gather_subset: "net_failover_group_info"
+      gather_subset: "net_dns_info"
+      gather_subset: "net_dev_discovery_info"
+    register: ontap_info
