@@ -13,7 +13,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "net_vlan_info"
     register: ontap_info
-      - name: Gather net_routes_info
+  - name: Gather net routes info
     na_ontap_info:
       https: true
       validate_certs: false
@@ -31,7 +31,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "net_port_broadcast_domain_info"
     register: ontap_info
-      - name: Gather net_port_info
+  - name: Gather net_port_info
     na_ontap_info:
       https: true
       validate_certs: false
@@ -40,7 +40,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "net_port_info"
     register: ontap_info
-      - name: Gather net_ipspaces_info
+  - name: Gather net_ipspaces_info
     na_ontap_info:
       https: true
       validate_certs: false
@@ -49,7 +49,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "net_ipspaces_info"
     register: ontap_info
-      - name: Gather net_interface_service_policy_info
+  - name: Gather net_interface_service_policy_info
     na_ontap_info:
       https: true
       validate_certs: false
@@ -58,7 +58,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "net_interface_service_policy_info"
     register: ontap_info
-      - name: Gather net_interface_info
+  - name: Gather net_interface_info
     na_ontap_info:
       https: true
       validate_certs: false
@@ -67,7 +67,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "net_interface_info"
     register: ontap_info
-      - name: Gather net_ifgrp_info
+  - name: Gather net_ifgrp_info
     na_ontap_info:
       https: true
       validate_certs: false
@@ -76,7 +76,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "net_ifgrp_info"
     register: ontap_info
-      - name: Gather net_firewall_info
+  - name: Gather net_firewall_info
     na_ontap_info:
       https: true
       validate_certs: false
@@ -85,7 +85,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "net_firewall_info"
     register: ontap_info
-      - name: Gather net_failover_group_info
+  - name: Gather net_failover_group_info
     na_ontap_info:
       https: true
       validate_certs: false
@@ -94,7 +94,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "net_failover_group_info"
     register: ontap_info
-      - name: Gather net_dns_info
+  - name: Gather net_dns_info
     na_ontap_info:
       https: true
       validate_certs: false
@@ -103,7 +103,7 @@
       password: "{{ netapp_password }}"
       gather_subset: "net_dns_info"
     register: ontap_info
-      - name: Gather net_dev_discovery_info
+  - name: Gather net_dev_discovery_info
     na_ontap_info:
       https: true
       validate_certs: false
